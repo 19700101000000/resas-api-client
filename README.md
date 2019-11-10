@@ -18,10 +18,18 @@ client and parse sql.
 #   https://opendata.resas-portal.go.jp/api/v1/cities?prefCode=1
 #   ...
 #   https://opendata.resas-portal.go.jp/api/v1/cities?prefCode=47
-# output:
+# outputs:
 #   ./json/cities_1.json
 #   ...
 #   ./json/cities_47.json
+
+./resas-api -mode=sql -table=prefectures -in=json/prefectures.json -cols="prefName > name, prefCode > id" -out=sql/prefectures.sql
+# output: ./prefectures.sql
+# sql: INSERT INTO prefectures(id,name) VALUES...
+
+./resas-api -mode=sql -table=cities -in=json/cities_1.json -cols="cityName > name, cityCode > id, prefCode > prefecture_id" -out=sql/cities_1.sql
+# output: ./cities_1.sql
+# sql: INSERT INTO cities(prefecture_id,id,name) VALUES...
 ```
 
 ## How to...

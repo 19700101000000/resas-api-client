@@ -2,6 +2,7 @@ package main
 
 import (
 	encodeJson "encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -66,7 +67,11 @@ func sql(table, cols, input, output string) error {
 
 	switch table {
 	case "prefectures":
-		sql, err = getSqlPrefectures(&json, cols)
+		sql, err =  getSql(&json, &structs.Prefectures{}, structs.Prefecture{}, table, cols)
+	case "cities":
+		sql, err =  getSql(&json, &structs.Cities{}, structs.City{}, table, cols)
+	default:
+		return errors.New("Error create sql: table is not exist.")
 	}
 	if err != nil {
 		fmt.Println("Error create sql:", input)
@@ -87,48 +92,76 @@ func sql(table, cols, input, output string) error {
 
 	return nil
 }
-func getSqlPrefectures(json *[]byte, cols string) (string, error) {
-	var prefectures structs.Prefectures
-	err := encodeJson.Unmarshal(*json, &prefectures)
+
+func getSql(json *[]byte, jsonStruct, tagStruct interface{}, table, cols string) (string, error) {
+	err := encodeJson.Unmarshal(*json, jsonStruct)
 	if err != nil {
 		fmt.Println("Error read json:")
 		return "", err
 	}
 
-	// fmt.Println(getSqlColumns(cols, structs.Prefecture{}))
-	tags := getSqlColumns(cols, structs.Prefecture{})
+	tags := getSqlColumns(cols, tagStruct)
 	var names, values []string
-	// struct
-	for index, prefecture := range prefectures.Result {
-		t := reflect.TypeOf(prefecture)
-		// field
-		colVals := make([]string, 0)
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
-			tag := field.Tag.Get("json")
-			if tags[tag] == "" {
-				continue
-			}
 
-			if index == 0 {
-				names = append(names, tags[tag])
-			}
+	switch jsonStruct.(type) {
+	case *structs.Prefectures:
+		for index, valueStruct := range jsonStruct.(*structs.Prefectures).Result {
+			getSqlNamesAndValues(index, valueStruct, tags, &names, &values)
+		}
+	case *structs.Cities:
+		for index, valueStruct := range jsonStruct.(*structs.Cities).Result {
+			getSqlNamesAndValues(index, valueStruct, tags, &names, &values)
+		}
+	default:
+		return "", errors.New("Error struct is not exist.")
+	}
 
+	sqlf := "INSERT INTO %s(%s) VALUES %s"
+	sql := fmt.Sprintf(sqlf, table, strings.Join(names, ","), strings.Join(values, ","))
+
+	return sql, nil
+}
+
+func getSqlNamesAndValues(index int, valueStruct interface{}, tags map[string]string, names, values *[]string) {
+	t := reflect.TypeOf(valueStruct)
+	// field
+	colVals := make([]string, 0)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		tag := field.Tag.Get("json")
+		if tags[tag] == "" {
+			continue
+		}
+
+		if index == 0 {
+			*names = append(*names, tags[tag])
+		}
+
+		switch valueStruct.(type) {
+		case structs.Prefecture:
+			prefecture := valueStruct.(structs.Prefecture)
 			switch field.Name {
 			case "PrefName":
 				colVals = append(colVals, "'"+prefecture.PrefName+"'")
 			case "PrefCode":
 				colVals = append(colVals, strconv.Itoa(prefecture.PrefCode))
 			}
+		case structs.City:
+			city := valueStruct.(structs.City)
+			switch field.Name {
+			case "PrefCode":
+				colVals = append(colVals, strconv.Itoa(city.PrefCode))
+			case "CityCode":
+				colVals = append(colVals, "'"+city.CityCode+"'")
+			case "CityName":
+				colVals = append(colVals, "'"+city.CityName+"'")
+			}
 		}
-		value := "(" + strings.Join(colVals, ",") + ")"
-		values = append(values, value)
 	}
-	sqlf := "INSERT INTO prefectures(%s) VALUES %s"
-	sql := fmt.Sprintf(sqlf, strings.Join(names, ","), strings.Join(values, ","))
-
-	return sql, nil
+	value := "(" + strings.Join(colVals, ",") + ")"
+	*values = append(*values, value)
 }
+
 func getSqlColumns(cols string, jsonSchema interface{}) map[string]string {
 	result := make(map[string]string)
 
