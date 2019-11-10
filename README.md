@@ -5,8 +5,23 @@ client and parse sql.
 
 ## Example
 ```bash
-./resas-api -mode=get -key=<API-KEY>\
--path=api/v1/prefectures -out=prefectures.json
+./resas-api -mode=get -key=<API-KEY> -path=api/v1/prefectures -out=prefectures.json
+# request: https://opendata.resas-portal.go.jp/api/v1/prefectures
+# output: ./prefectures.json
+
+./resas-api -mode=get -key=<API-KEY> -path=api/v1/cities -params="prefCode = 1" -out=cities_1.json
+# request: https://opendata.resas-portal.go.jp/api/v1/cities?prefCode=1
+# output: ./cities_1.json
+
+./resas-api -mode=get_cities -key=<API-KEY> -out=json/
+# requests:
+#   https://opendata.resas-portal.go.jp/api/v1/cities?prefCode=1
+#   ...
+#   https://opendata.resas-portal.go.jp/api/v1/cities?prefCode=47
+# output:
+#   ./json/cities_1.json
+#   ...
+#   ./json/cities_47.json
 ```
 
 ## How to...
@@ -58,5 +73,5 @@ client and parse sql.
    ```
 1. sql
   ```bash
-  ./resas-api -mode=sql -table=<TYPE> -in=<JSON> -out=<SQL> [-cols=<COLS>]
+  ./resas-api -mode=sql -table=<TYPE> -in=<JSON> [-out=<SQL> -cols=<COLS>]
   ```

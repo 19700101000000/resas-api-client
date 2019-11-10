@@ -1,14 +1,15 @@
 package main
 
 import (
+	encodeJson "encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	// "reflect"
-	encodeJson "encoding/json"
+	"reflect"
 	"resas-api/env"
 	"resas-api/structs"
+	"strconv"
 	"strings"
 )
 
@@ -54,10 +55,6 @@ func sql(table, cols, input, output string) error {
 		fmt.Println("You must set in.", messageHelp)
 		return nil
 	}
-	if output == "" {
-		fmt.Println("You must set out.", messageHelp)
-		return nil
-	}
 
 	json, err := ioutil.ReadFile(input)
 	if err != nil {
@@ -65,27 +62,96 @@ func sql(table, cols, input, output string) error {
 		return err
 	}
 
+	var sql string
+
 	switch table {
 	case "prefectures":
-		return sqlPrefectures(&json, cols)
+		sql, err = getSqlPrefectures(&json, cols)
 	}
+	if err != nil {
+		fmt.Println("Error create sql:", input)
+		return err
+	}
+
+	if output == "" {
+		fmt.Println(sql)
+		return nil
+	}
+
+	err = ioutil.WriteFile(output, []byte(sql), 0644)
+	if err != nil {
+		fmt.Println("Error output:", output)
+		return err
+	}
+	fmt.Println("Success output:", output)
 
 	return nil
 }
-func sqlPrefectures(json *[]byte, cols string) error {
+func getSqlPrefectures(json *[]byte, cols string) (string, error) {
 	var prefectures structs.Prefectures
 	err := encodeJson.Unmarshal(*json, &prefectures)
 	if err != nil {
 		fmt.Println("Error read json:")
-		return err
+		return "", err
 	}
 
-	getSqlColumns(cols, structs.Prefecture{})
+	// fmt.Println(getSqlColumns(cols, structs.Prefecture{}))
+	tags := getSqlColumns(cols, structs.Prefecture{})
+	var names, values []string
+	// struct
+	for index, prefecture := range prefectures.Result {
+		t := reflect.TypeOf(prefecture)
+		// field
+		colVals := make([]string, 0)
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			tag := field.Tag.Get("json")
+			if tags[tag] == "" {
+				continue
+			}
 
-	return nil
+			if index == 0 {
+				names = append(names, tags[tag])
+			}
+
+			switch field.Name {
+			case "PrefName":
+				colVals = append(colVals, "'"+prefecture.PrefName+"'")
+			case "PrefCode":
+				colVals = append(colVals, strconv.Itoa(prefecture.PrefCode))
+			}
+		}
+		value := "(" + strings.Join(colVals, ",") + ")"
+		values = append(values, value)
+	}
+	sqlf := "INSERT INTO prefectures(%s) VALUES %s"
+	sql := fmt.Sprintf(sqlf, strings.Join(names, ","), strings.Join(values, ","))
+
+	return sql, nil
 }
-func getSqlColumns(cols string, jsonSchema interface{}) {
-	fmt.Println(jsonSchema)
+func getSqlColumns(cols string, jsonSchema interface{}) map[string]string {
+	result := make(map[string]string)
+
+	if cols == "" {
+		t := reflect.TypeOf(jsonSchema)
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			tag := field.Tag.Get("json")
+			result[tag] = tag
+		}
+		return result
+	}
+
+	cols = strings.ReplaceAll(cols, " ", "")
+	for _, v := range strings.Split(cols, ",") {
+		if strings.Contains(v, ">") {
+			s := strings.Split(v, ">")
+			result[s[0]] = s[1]
+			continue
+		}
+		result[v] = v
+	}
+	return result
 }
 
 func get(apiKey, path, params, output string) error {
