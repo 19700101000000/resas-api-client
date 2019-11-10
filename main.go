@@ -16,6 +16,8 @@ import (
 
 const (
 	messageHelp = "If you need help, enter `resas-api -h`."
+	start       = 1
+	end         = 47
 )
 
 func main() {
@@ -40,6 +42,10 @@ func main() {
 		err = getCities(*apiKey, *output)
 	case "sql":
 		err = sql(*table, *cols, *input, *output)
+	case "sql_cities":
+		err = sqlCities(*cols, *input, *output)
+	default:
+		err = errors.New("Error mode is not exist.")
 	}
 
 	if err != nil {
@@ -67,9 +73,9 @@ func sql(table, cols, input, output string) error {
 
 	switch table {
 	case "prefectures":
-		sql, err =  getSql(&json, &structs.Prefectures{}, structs.Prefecture{}, table, cols)
+		sql, err = getSql(&json, &structs.Prefectures{}, structs.Prefecture{}, table, cols)
 	case "cities":
-		sql, err =  getSql(&json, &structs.Cities{}, structs.City{}, table, cols)
+		sql, err = getSql(&json, &structs.Cities{}, structs.City{}, table, cols)
 	default:
 		return errors.New("Error create sql: table is not exist.")
 	}
@@ -91,6 +97,32 @@ func sql(table, cols, input, output string) error {
 	fmt.Println("Success output:", output)
 
 	return nil
+}
+
+func sqlCities(cols, in, out string) error {
+	count, finish := 0, make(chan bool, end)
+
+	for i := start; i <= end; i++ {
+		input := fmt.Sprintf("%scities_%d.json", in, i)
+		output := fmt.Sprintf("%scities_%d.sql", out, i)
+		go sqlCity("cities", cols, input, output, finish)
+	}
+
+	for i := start; i <= end; i++ {
+		if <-finish {
+			count++
+		}
+	}
+	fmt.Println("Result sql cities:", count)
+	return nil
+}
+func sqlCity(table, cols, input, output string, finish chan<- bool) {
+	err := sql("cities", cols, input, output)
+	if err != nil {
+		fmt.Println("Error:", err)
+		finish <- false
+	}
+	finish <- true
 }
 
 func getSql(json *[]byte, jsonStruct, tagStruct interface{}, table, cols string) (string, error) {
@@ -244,8 +276,6 @@ func get(apiKey, path, params, output string) error {
 
 func getCities(apiKey, out string) error {
 	var (
-		start  = 1
-		end    = 47
 		finish = make(chan bool, end)
 		count  int8
 	)

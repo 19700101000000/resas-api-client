@@ -30,6 +30,10 @@ client and parse sql.
 ./resas-api -mode=sql -table=cities -in=json/cities_1.json -cols="cityName > name, cityCode > id, prefCode > prefecture_id" -out=sql/cities_1.sql
 # output: ./cities_1.sql
 # sql: INSERT INTO cities(prefecture_id,id,name) VALUES...
+
+./resas-api -mode=sql_cities -in=json/ -cols="cityName > name, cityCode > id, prefCode > prefecture_id" -out=sql/
+# output: ./cities_1.sql
+# sql: INSERT INTO cities(prefecture_id,id,name) VALUES...
 ```
 
 ## How to...
@@ -44,6 +48,7 @@ client and parse sql.
   1. get
   1. get_cities
   1. sql
+  1. sql_cities
 - key
   - Your API KEY.
 - path
