@@ -34,6 +34,8 @@ func main() {
 	switch *mode {
 	case "get":
 		err = get(*apiKey, *path, *params, *output)
+	case "get_cities":
+		err = getCities(*apiKey, *output)
 	case "sql":
 		err = sql(*table, *cols, *input, *output)
 	}
@@ -139,4 +141,37 @@ func get(apiKey, path, params, output string) error {
 	fmt.Println("Success output:", output)
 
 	return nil
+}
+
+func getCities(apiKey, out string) error {
+	var (
+		start  = 1
+		end    = 47
+		finish = make(chan bool, end)
+		count  int8
+	)
+	for i := start; i <= end; i++ {
+
+		path := "api/v1/cities"
+		path += fmt.Sprintf("?prefCode=%d", i)
+		output := fmt.Sprintf("%scities_%d.json", out, i)
+		go getCity(apiKey, path, output, finish)
+	}
+
+	for i := start; i <= end; i++ {
+		if <-finish {
+			count++
+		}
+	}
+	fmt.Println("Result get cities:", count)
+	return nil
+}
+func getCity(apiKey, path, out string, finish chan<- bool) {
+	fmt.Println(out)
+	err := get(apiKey, path, "", out)
+	if err != nil {
+		fmt.Println("Error:", out)
+		finish <- false
+	}
+	finish <- true
 }

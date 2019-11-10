@@ -19,6 +19,7 @@ client and parse sql.
 ### Arguments
 - mode
   1. get
+  1. get_cities
   1. sql
 - key
   - Your API KEY.
@@ -47,12 +48,15 @@ client and parse sql.
       ```
 
 ### Modes
-- get
+1. get
   ```bash
   ./resas-api -mode=get -key=<API-KEY> -path=<PATH> [-out=<FILE> -params=<PARAMETERS>]
   ```
-
-- sql
+1. get_cities
+   ```bash
+   ./resas-api -mode=get_cities -key=<API-KEY> [-out<FILE-ARTICLE>]
+   ```
+1. sql
   ```bash
   ./resas-api -mode=sql -table=<TYPE> -in=<JSON> -out=<SQL> [-cols=<COLS>]
   ```
