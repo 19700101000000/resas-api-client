@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	// "reflect"
+	encodeJson "encoding/json"
 	"resas-api/env"
+	"resas-api/structs"
+	"strings"
 )
 
 const (
@@ -21,6 +25,7 @@ func main() {
 		input  = flag.String("in", "", "this is input file name.")
 		table  = flag.String("table", "", "this is SQL's parse type.")
 		cols   = flag.String("cols", "", "this is SQL's columns.")
+		params = flag.String("params", "", "this is GET parameters.")
 		err    error
 	)
 	flag.Parse()
@@ -28,13 +33,13 @@ func main() {
 	fmt.Println("mode:", *mode)
 	switch *mode {
 	case "get":
-		err = get(*apiKey, *path, *output)
+		err = get(*apiKey, *path, *params, *output)
 	case "sql":
 		err = sql(*table, *cols, *input, *output)
 	}
 
 	if err != nil {
-		fmt.Printf("%v", err)
+		fmt.Printf("%v\n", err)
 	}
 }
 
@@ -44,25 +49,44 @@ func sql(table, cols, input, output string) error {
 		return nil
 	}
 	if input == "" {
-		fmt.Println("You must set input.", messageHelp)
+		fmt.Println("You must set in.", messageHelp)
 		return nil
 	}
 	if output == "" {
-		fmt.Println("You must set output.", messageHelp)
+		fmt.Println("You must set out.", messageHelp)
 		return nil
 	}
 
-	_, err := ioutil.ReadFile(input)
+	json, err := ioutil.ReadFile(input)
 	if err != nil {
 		fmt.Println("Error input:", input)
 		return err
 	}
 
-	
+	switch table {
+	case "prefectures":
+		return sqlPrefectures(&json, cols)
+	}
+
 	return nil
 }
+func sqlPrefectures(json *[]byte, cols string) error {
+	var prefectures structs.Prefectures
+	err := encodeJson.Unmarshal(*json, &prefectures)
+	if err != nil {
+		fmt.Println("Error read json:")
+		return err
+	}
 
-func get(apiKey, path, output string) error {
+	getSqlColumns(cols, structs.Prefecture{})
+
+	return nil
+}
+func getSqlColumns(cols string, jsonSchema interface{}) {
+	fmt.Println(jsonSchema)
+}
+
+func get(apiKey, path, params, output string) error {
 	if apiKey == "" {
 		fmt.Println("You must set key.", messageHelp)
 		return nil
@@ -73,6 +97,11 @@ func get(apiKey, path, output string) error {
 	}
 
 	fullPath := env.Endpoint + path
+	if params != "" {
+		params = strings.ReplaceAll(params, " ", "")
+		params = strings.ReplaceAll(params, ",", "&")
+		fullPath += "?" + params
+	}
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fullPath, nil)

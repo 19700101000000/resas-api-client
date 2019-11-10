@@ -35,15 +35,21 @@ client and parse sql.
     Example...
     ```bash
     # from
-    -cols="prefCode, prefName as name"
+    -cols="prefCode, prefName > name"
     # to
     INSERT INTO table(prefCode, name)...
     ```
+  - params
+    - GET method params.  
+      Example...
+      ```bash
+      -params="prefCode = 1, cityCode = 2"
+      ```
 
 ### Modes
 - get
   ```bash
-  ./resas-api -mode=get -key=<API-KEY> -path=<PATH> [-out=<FILE>]
+  ./resas-api -mode=get -key=<API-KEY> -path=<PATH> [-out=<FILE> -params=<PARAMETERS>]
   ```
 
 - sql
