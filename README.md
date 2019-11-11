@@ -5,15 +5,15 @@ client and parse sql.
 
 ## Example
 ```bash
-./resas-api -mode=get -key=<API-KEY> -path=api/v1/prefectures -out=prefectures.json
+./resas-api --mode=get --key=<API-KEY> --path=api/v1/prefectures --out=prefectures.json
 # request: https://opendata.resas-portal.go.jp/api/v1/prefectures
 # output: ./prefectures.json
 
-./resas-api -mode=get -key=<API-KEY> -path=api/v1/cities -params="prefCode = 1" -out=cities_1.json
+./resas-api --mode=get --key=<API-KEY> --path=api/v1/cities --params="prefCode = 1" --out=cities_1.json
 # request: https://opendata.resas-portal.go.jp/api/v1/cities?prefCode=1
 # output: ./cities_1.json
 
-./resas-api -mode=get_cities -key=<API-KEY> -out=json/
+./resas-api --mode=get_cities --key=<API-KEY> --out=json/
 # requests:
 #   https://opendata.resas-portal.go.jp/api/v1/cities?prefCode=1
 #   ...
@@ -23,17 +23,31 @@ client and parse sql.
 #   ...
 #   ./json/cities_47.json
 
-./resas-api -mode=sql -table=prefectures -in=json/prefectures.json -cols="prefName > name, prefCode > id" -out=sql/prefectures.sql
+./resas-api -mode=sql --table=prefectures --in=json/prefectures.json --cols="prefName > name, prefCode > id" --out=sql/prefectures.sql
 # output: ./prefectures.sql
 # sql: INSERT INTO prefectures(id,name) VALUES...
 
-./resas-api -mode=sql -table=cities -in=json/cities_1.json -cols="cityName > name, cityCode > id, prefCode > prefecture_id" -out=sql/cities_1.sql
+./resas-api --mode=sql --table=cities --in=json/cities_1.json --cols="cityName > name, cityCode > id, prefCode > prefecture_id" --out=sql/cities_1.sql
 # output: ./cities_1.sql
 # sql: INSERT INTO cities(prefecture_id,id,name) VALUES...
 
-./resas-api -mode=sql_cities -in=json/ -cols="cityName > name, cityCode > id, prefCode > prefecture_id" -out=sql/
-# output: ./cities_1.sql
+./resas-api --mode=sql_cities --in=json/ --cols="cityName > name, cityCode > id, prefCode > prefecture_id" --out=sql/
+# inputs:
+#   ./json/cities_1.json
+#   ...
+#   ./json/cites_47.json
+# outputs:
+#   ./sql/cities_1.sql
+#   ...
+#   ./sql.cities_47.sqp
 # sql: INSERT INTO cities(prefecture_id,id,name) VALUES...
+
+./resas-api --mode=sql_cities_in_one --in=sql/ --out=sql/
+# inputs:
+#   ./sql/cities_1.sql
+#   ...
+#   ./sql/cities_47.sql
+# output: ./sql/cities_all.sql
 ```
 
 ## How to...
@@ -49,6 +63,7 @@ client and parse sql.
   1. get_cities
   1. sql
   1. sql_cities
+  1. sql_cities_in_one
 - key
   - Your API KEY.
 - path
@@ -64,7 +79,7 @@ client and parse sql.
     Example...
     ```bash
     # from
-    -cols="prefCode, prefName > name"
+    --cols="prefCode, prefName > name"
     # to
     INSERT INTO table(prefCode, name)...
     ```
@@ -72,19 +87,27 @@ client and parse sql.
     - GET method params.  
       Example...
       ```bash
-      -params="prefCode = 1, cityCode = 2"
+      --params="prefCode = 1, cityCode = 2"
       ```
 
 ### Modes
 1. get
   ```bash
-  ./resas-api -mode=get -key=<API-KEY> -path=<PATH> [-out=<FILE> -params=<PARAMETERS>]
+  ./resas-api --mode=get --key=<API-KEY> --path=<PATH> [--out=<FILE> --params=<PARAMETERS>]
   ```
 1. get_cities
    ```bash
-   ./resas-api -mode=get_cities -key=<API-KEY> [-out<FILE-ARTICLE>]
+   ./resas-api --mode=get_cities --key=<API-KEY> [--out<FILE-ARTICLE>]
    ```
 1. sql
   ```bash
-  ./resas-api -mode=sql -table=<TYPE> -in=<JSON> [-out=<SQL> -cols=<COLS>]
+  ./resas-api --mode=sql --table=<TYPE> --in=<JSON> [--out=<SQL> --cols=<COLS>]
+  ```
+1. sql_cities
+  ```bash
+  ./resas-api --mode=sql_cities [--in=<FILE-ARTICLE> --out=<FILE-ARTICLE> --cols=<COLS>]
+  ```
+1. sql_cities_in_one
+  ```bash
+  ./resas-api --mode=sql_cities_in_one [--in=<FILE-ARTICLE> --out=<FILE-ARTICLE>]
   ```

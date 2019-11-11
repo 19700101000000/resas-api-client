@@ -44,6 +44,8 @@ func main() {
 		err = sql(*table, *cols, *input, *output)
 	case "sql_cities":
 		err = sqlCities(*cols, *input, *output)
+	case "sql_cities_in_one":
+		err = sqlSitiesInOne(*input, *output)
 	default:
 		err = errors.New("Error mode is not exist.")
 	}
@@ -51,6 +53,29 @@ func main() {
 	if err != nil {
 		fmt.Printf("%v\n", err)
 	}
+}
+
+func sqlSitiesInOne(in, out string) error {
+	var sqls string
+
+	inputf, outputf := "%scities_%d.sql", "%scities_all.sql"
+	for i := start; i <= end; i++ {
+		input := fmt.Sprintf(inputf, in, i)
+		content, err := ioutil.ReadFile(input)
+		if err != nil {
+			fmt.Println("Error input:", err)
+		}
+		sqls += fmt.Sprintf("%s\n", content)
+	}
+
+	output := fmt.Sprintf(outputf, out)
+	err := ioutil.WriteFile(output, []byte(sqls), 0644)
+	if err != nil {
+		fmt.Println("Error output:", output)
+		return err
+	}
+
+	return nil
 }
 
 func sql(table, cols, input, output string) error {
@@ -148,7 +173,7 @@ func getSql(json *[]byte, jsonStruct, tagStruct interface{}, table, cols string)
 		return "", errors.New("Error struct is not exist.")
 	}
 
-	sqlf := "INSERT INTO %s(%s) VALUES %s"
+	sqlf := "INSERT INTO %s(%s) VALUES %s;"
 	sql := fmt.Sprintf(sqlf, table, strings.Join(names, ","), strings.Join(values, ","))
 
 	return sql, nil
