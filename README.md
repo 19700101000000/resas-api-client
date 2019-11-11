@@ -83,12 +83,12 @@ client and parse sql.
     # to
     INSERT INTO table(prefCode, name)...
     ```
-  - params
-    - GET method params.  
-      Example...
-      ```bash
-      --params="prefCode = 1, cityCode = 2"
-      ```
+- params
+  - GET method params.  
+    Example...
+    ```bash
+    --params="prefCode = 1, cityCode = 2"
+    ```
 
 ### Modes
 1. get
